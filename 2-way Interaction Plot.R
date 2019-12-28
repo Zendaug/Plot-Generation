@@ -1,4 +1,5 @@
 # An R macro for creating a two-way moderation graph, which is automatically saved as an SVG file
+# Version 1.0.1: Fixed the file notation to indicate: Dependent Variable ON Independent Variable X Moderator
 
 # Data ----
 result.table <- list(
@@ -25,16 +26,14 @@ ylim_upper <- NA #The upper limit of the Y-axis (leave as NA for it to be automa
 xlim_lower <- NA #The lower limit of the X-axis (leave as NA for it to be automatically set)
 xlim_upper <- NA #The upper limit of the Y-axis (leave as NA for it to be automatically set)
 
-# Code ----
-file_name <- paste0(result.table$predictors$name[result.table$x],
+# Determine plot file name ----
+file_name <- paste0(result.table$y.name,
+                    " on ",
+                   result.table$predictors$name[result.table$x],
                    " X ",
                    result.table$predictors$name[result.table$m],
-                   " on ",
-                   result.table$y.name,
                    ".",
                    file_type)# The name of the file to be created
-
-file_name
 
 # Load Packages----
 load.package <- function(x)
