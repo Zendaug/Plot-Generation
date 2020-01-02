@@ -116,15 +116,15 @@ theme.plain <- theme(axis.line.x = element_line(colour = "black"), # Add in x ax
 # Create the GGPlot----
 regression_plot <- function(plot.data, point.data = NA) {
   plot1 <- ggplot()
-  
-  plot1 = plot1 + 
-    geom_ribbon(data = plot.data, aes(x = x, ymin = y_lower, ymax = y_upper), fill = "grey95") + 
-    geom_smooth(data = plot.data, aes(x = x, y = y_lower), size = 0.5, color = "black", linetype = "dashed", se = FALSE, method = "loess", formula = "y ~ x") +
-    geom_smooth(data = plot.data, aes(x = x, y = y_upper), size = 0.5, color = "black", linetype = "dashed", se = FALSE, method = "loess", formula = "y ~ x")
-    
+
   if (exists("point.data")) {
     plot1 = plot1 + geom_point(data = point.data, aes(x = x, y = y))
   }
+    
+  plot1 = plot1 + 
+    geom_ribbon(data = plot.data, aes(x = x, ymin = y_lower, ymax = y_upper), fill = "grey95", alpha = 0.5) + 
+    geom_smooth(data = plot.data, aes(x = x, y = y_lower), size = 0.5, color = "black", linetype = "dashed", se = FALSE, method = "loess", formula = "y ~ x") +
+    geom_smooth(data = plot.data, aes(x = x, y = y_upper), size = 0.5, color = "black", linetype = "dashed", se = FALSE, method = "loess", formula = "y ~ x")
   
   plot1 = plot1 + 
     geom_smooth(data = plot.data, aes(x = x, y = y_pred), size = 0.75, color = "black", se = FALSE, method = "loess", formula = "y ~ x") +
@@ -149,5 +149,3 @@ ggsave(filename = file_name,
        units = "in", 
        width = image_width, 
        height = image_height)
-
-
