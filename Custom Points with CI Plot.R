@@ -1,0 +1,101 @@
+# An R macro for creating a plot based on a custom set of points, with an asymmetric confidence interval
+
+# Data ----
+# This list contains the results from the regression model (probably obtained in another program)
+dataset <- list(
+  y.name = "Knowledge Sharing", # The name of the dependent variable
+  x.name = "Time from impulse",
+  results = data.frame(x = c(1,2,3,4,5),
+                       points = c(0.6, 0.5, 0.45, 0.425, 0.4),
+                       CI_lower = c(0.41780968166953, 0.439049079744683, 0.40289298001313, 0.343044339198, 0.350473186254008),
+                       CI_upper = c(0.646725784474329, 0.556417936737972, 0.555421095911021, 0.549185165128289, 0.458112387338107))
+)
+
+# Settings----
+image_width = 6  # The width of the image (in inches)
+height_ratio = (1 + sqrt(5))/2 # Set the ratio to phi by default
+image_height = image_width / height_ratio # The height of the image (in inches)
+file_type = "svg" # The file type. It is recommended to use a vector format (e.g., "svg" or "emf") or high-quality image (e.g., "png")
+
+ylim_lower <- NA #The lower limit of the Y-axis (leave as NA for it to be automatically set)
+ylim_upper <- NA #The upper limit of the Y-axis (leave as NA for it to be automatically set)
+xlim_lower <- NA #The lower limit of the X-axis (leave as NA for it to be automatically set)
+xlim_upper <- NA #The upper limit of the Y-axis (leave as NA for it to be automatically set)
+
+x_lower <- min(point_data$x) # The lower limit of the line of best fit on the X axis (defaults to smallest X value)
+x_upper <- max(point_data$x) # The upper limit of the line of best fit on the X axis (defaults to largest X value)
+points <- 20 # The number of points on the plot line (more means better resolution)
+cinterval <- 0.95 # The confidence interval
+
+# Determine plot file name ----
+file_name <- paste0(dataset$y.name,
+                    ".",
+                    file_type)# The name of the file to be created
+
+# Offset the points data (if required)
+point_data$x <- point_data$x + dataset$predictors$x.off[dataset$x[1]]
+
+# Load Packages----
+load.package <- function(x)
+{
+  if (!require(x,character.only = TRUE))
+  {
+    install.packages(x,dep=TRUE)
+    if(!require(x,character.only = TRUE)) stop("Package not found")
+  }
+}
+
+load.package ("ggplot2")
+load.package ("lemon")
+
+# Functions----
+
+# Include themes----
+theme.plain <- theme(axis.line.x = element_line(colour = "black"), # Add in x axis
+                     axis.line.y = element_line(colour = "black"),       # Add in y axis
+                     text = element_text(family="sans"),                 # Set the font (options are: "mono", "serif", "sans"
+                     panel.grid.major = element_blank(),                 # Delete major grid
+                     panel.grid.minor = element_blank(),                 # Delete minor grid
+                     panel.border = element_blank(),                     # Delete border
+                     panel.background = element_blank(),                 # Make background blank
+                     legend.key = element_blank(),
+                     plot.margin = margin(5, 5, 5, 5, "pt"),
+                     strip.background = element_blank(),                 # Make the facet heading blank
+                     strip.placement = "outside",                        # For faceting, it will put the facet label outside of the Y-axis 
+                     panel.spacing = unit(1, "lines"))                   # Move facets further apart
+
+
+# Create the GGPlot----
+regression_plot <- function(dataset) {
+  plot1 <- ggplot(data = dataset$result) + 
+    geom_smooth(aes(x = x, y = CI_lower), size = 0.5, color = "black", linetype = "dashed", se = FALSE, method = "auto", formula = "y ~ x") +
+    geom_smooth(aes(x = x, y = CI_upper), size = 0.5, color = "black", linetype = "dashed", se = FALSE, method = "auto", formula = "y ~ x") +
+    xlab(dataset$x.name) +
+    ylab(dataset$y.name) +
+    theme.plain
+
+  gg1 <- ggplot_build(plot1)
+  
+  # Extract the deta from the plot
+  df2 <- data.frame(x = gg1$data[[1]]$x,
+                    CI_lower = gg1$data[[1]]$y,
+                    CI_upper = gg1$data[[2]]$y) 
+
+  plot1 = plot1 + geom_ribbon(data = df2, aes(x = x, ymin = CI_lower, ymax = CI_upper), fill = "grey95", alpha = 0.5) + 
+    geom_smooth(data = dataset$result, aes(x = x, y = points), size = 0.75, color = "black", se = FALSE, method = "loess", formula = "y ~ x") +
+    geom_point(data = dataset$result, aes(x = x, y = points))
+        
+  if (!is.na(ylim_lower) | !is.na(ylim_upper)) {plot1 = plot1 + ylim(ylim_lower, ylim_upper)}
+  if (!is.na(xlim_lower) | !is.na(xlim_upper)) {plot1 = plot1 + xlim(xlim_lower, xlim_upper)}
+  print(plot1)
+}    
+
+# Generate the plot
+image <- regression_plot(dataset)
+
+# Save the image
+ggsave(filename = file_name, 
+       plot = image, 
+       units = "in", 
+       width = image_width, 
+       height = image_height)
